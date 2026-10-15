@@ -12,7 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         # Same size on both sides: 2 vCPU GitHub vs 2 vCPU Tenki
-        runner: [ubuntu-latest, tenki-standard-small-2c-4g]
+        runner: [ubuntu-latest, tenki-standard-medium-4c-8g]
         run: [1, 2, 3]
     steps:
       - name: Machine info
