@@ -1,0 +1,43 @@
+name: Runner Benchmark
+
+# Manual trigger only, so you control exactly when credits are spent.
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.runner }} (run ${{ matrix.run }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Same size on both sides: 2 vCPU GitHub vs 2 vCPU Tenki
+        runner: [ubuntu-latest, tenki-standard-small-2c-4g]
+        run: [1, 2, 3]
+    steps:
+      - name: Machine info
+        run: |
+          echo "CPU: $(lscpu | awk -F: '/Model name/ {gsub(/^ +/, "", $2); print $2}')"
+          echo "vCPUs: $(nproc)"
+          free -h
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Download ripgrep source (pinned version)
+        run: git clone --depth 1 --branch 14.1.1 https://github.com/BurntSushi/ripgrep.git
+
+      - name: Build ripgrep (timed)
+        working-directory: ripgrep
+        run: |
+          start=$(date +%s)
+          cargo build --release --locked
+          end=$(date +%s)
+          secs=$((end - start))
+          cpu=$(lscpu | awk -F: '/Model name/ {gsub(/^ +/, "", $2); print $2}')
+          {
+            echo "### ${{ matrix.runner }} (run ${{ matrix.run }})"
+            echo "- CPU: ${cpu}"
+            echo "- vCPUs: $(nproc)"
+            echo "- Build time: **${secs} seconds**"
+          } >> "$GITHUB_STEP_SUMMARY"
